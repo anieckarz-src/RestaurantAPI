@@ -53,3 +53,9 @@ C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\obj\Debug\net5.0\Restau
 C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\obj\Debug\net5.0\ref\RestaurantAPI.dll
 C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\obj\Debug\net5.0\RestaurantAPI.pdb
 C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\obj\Debug\net5.0\RestaurantAPI.genruntimeconfig.cache
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\AutoMapper.dll
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\Microsoft.Extensions.Options.dll
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\Microsoft.Extensions.Primitives.dll
+C:\Users\w65553\source\repos\RestaurantAPI\RestaurantAPI\bin\Debug\net5.0\System.Runtime.CompilerServices.Unsafe.dll
