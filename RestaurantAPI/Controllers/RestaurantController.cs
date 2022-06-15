@@ -1,44 +1,64 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RestaurantAPI.Data;
-using RestaurantAPI.Entities;
+using RestaurantAPI.Models;
+using RestaurantAPI.Services;
 using System.Collections.Generic;
-using System.Linq;
+
 
 namespace RestaurantAPI.Controllers
 {
 
     [Route("api/restaurant")]
+    [ApiController]
     public class RestaurantController : ControllerBase
     {
-        private readonly RestaurantDbContext _dbContext;
 
-        public RestaurantController(RestaurantDbContext dbContext)
+        private readonly IRestaurantService _restaurantService;
+
+        public RestaurantController(IRestaurantService restaurantService)
         {
-            _dbContext = dbContext;
+            _restaurantService = restaurantService;
+        }
+
+        [HttpDelete("{id}")]
+        public ActionResult Delete([FromRoute] int id)
+        {
+            _restaurantService.Delete(id);
+
+            return NotFound();
+        }
+
+        [HttpPut("{id}")]
+        public ActionResult Update([FromBody] UpdateRestaurantDto dto,[FromRoute] int id)
+        {
+   
+            _restaurantService.Update(dto,id);
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public ActionResult CreateRestaurant([FromBody] CreateRestaurantDto dto)
+        {
+
+            int id = _restaurantService.Create(dto);
+
+            return Created($"/api/restaurant/{id}",null);
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Restaurant>> GetAll()
+        public ActionResult<IEnumerable<RestaurantDto>> GetAll()
         {
-            var restourants = _dbContext
-                .Restaurants
-                .ToList();
-            return Ok(restourants);
+            var restaurantsDtos = _restaurantService.GetAll();
+            return Ok(restaurantsDtos);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Restaurant> Get([FromRoute] int id)
+        public ActionResult<RestaurantDto> Get([FromRoute] int id)
         {
-            var restourant = _dbContext
-                .Restaurants
-                .FirstOrDefault(x => x.Id == id);
+            var restaurantDto = _restaurantService.GetById(id);
 
-            if(restourant == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(restourant);
+            return Ok(restaurantDto);
         }
+
     }
 }
