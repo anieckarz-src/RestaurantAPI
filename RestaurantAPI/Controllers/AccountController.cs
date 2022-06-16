@@ -18,10 +18,9 @@ namespace RestaurantAPI.Controllers
         [HttpPost("register")]
         public ActionResult RegisterUser([FromBody] RegisterUserDto dto)
         {
-               _accountService.RegisterUser(dto);
+            _accountService.RegisterUser(dto);
             return Ok();
         }
-
 
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginDto dto)

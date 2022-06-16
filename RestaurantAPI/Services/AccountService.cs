@@ -50,14 +50,19 @@ namespace RestaurantAPI.Services
                 throw new BadRequestException("Invalid username or password");
             }
 
-            var calims = new List<Claim>()
+            var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, $"{user.FirstrName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, $"{user.Role.Name}"),
-                new Claim("DateOfBIrth", user.DateOfBirth.Value.ToString("yyy-MM-dd")),
-                new Claim("Nationality",user.Nationality)
+                new Claim("DateOfBirth", user.DateOfBirth.Value.ToString("yyy-MM-dd"))
             };
+
+
+            if (!string.IsNullOrEmpty(user.Nationality))
+            {
+                claims.Add(new Claim("Nationality", user.Nationality));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authenticationSettings.JwtKey));
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -66,7 +71,7 @@ namespace RestaurantAPI.Services
             var token = new JwtSecurityToken(
                 _authenticationSettings.JwtIssuer,
                 _authenticationSettings.JwtIssuer,
-                calims,
+                claims,
                 expires: expires,
                 signingCredentials: cred);
 
