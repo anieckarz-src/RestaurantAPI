@@ -7,8 +7,10 @@ using RestaurantAPI.Data;
 using RestaurantAPI.Entities;
 using RestaurantAPI.Exceptions;
 using RestaurantAPI.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace RestaurantAPI.Services
@@ -16,14 +18,15 @@ namespace RestaurantAPI.Services
     public interface IRestaurantService
     {
         RestaurantDto GetById(int id);
-        IEnumerable<RestaurantDto> GetAll();
-        int Create(CreateRestaurantDto dto, int userId);
-        void Delete(int id, ClaimsPrincipal user);
-        void Update(UpdateRestaurantDto dto, int id, ClaimsPrincipal user);
+        PagedResult<RestaurantDto> GetAll(RestaurantQuery query);
+        int Create(CreateRestaurantDto dto);
+        void Delete(int id);
+        void Update(UpdateRestaurantDto dto, int id);
     }
 
     public class RestaurantService : IRestaurantService
     {
+        private readonly IUserContextService _userContextService;
         private readonly IAuthorizationService _authorizationService;
         private readonly RestaurantDbContext _dbContext;
         private readonly IMapper _mapper;
@@ -31,15 +34,17 @@ namespace RestaurantAPI.Services
 
         public RestaurantService(RestaurantDbContext dbContext, IMapper mapper,
             ILogger<RestaurantService> logger,
-            IAuthorizationService authorizationService)
+            IAuthorizationService authorizationService,
+            IUserContextService userContextService)
         {
+            _userContextService = userContextService;
             _authorizationService = authorizationService;
             _dbContext = dbContext;
             _mapper = mapper;
             _logger = logger;
         }
 
-        public void Delete(int id, ClaimsPrincipal user)
+        public void Delete(int id)
         {
 
             _logger.LogError($"Restaurant with id: {id} DELETE action invoked");
@@ -51,7 +56,7 @@ namespace RestaurantAPI.Services
                 throw new NotFoundException("Restaurant not found");
             }
 
-            var authorizationResult = _authorizationService.AuthorizeAsync(user, restaurant,
+            var authorizationResult = _authorizationService.AuthorizeAsync(_userContextService.User, restaurant,
                 new ResourceOperationRequirement(ResourceOperation.Delete)).Result;
 
             if (!authorizationResult.Succeeded)
@@ -79,27 +84,56 @@ namespace RestaurantAPI.Services
             return result;
         }
 
-        public IEnumerable<RestaurantDto> GetAll()
+        public PagedResult<RestaurantDto> GetAll(RestaurantQuery query)
         {
-            var restaurants = _dbContext
+            var baseQuery = _dbContext
                 .Restaurants
                 .Include(r => r.Address)
                 .Include(r => r.Dishes)
-                .ToList();
+                .Where(r => query.SearchPhrase == null || (r.Name.ToLower().Contains(query.SearchPhrase.ToLower()) || 
+                r.Description.ToLower()
+                .Contains(query.SearchPhrase.ToLower())));
+
+            if (string.IsNullOrEmpty(query.SortBy))
+            {
+                var columnsSelector = new Dictionary<string, Expression<Func<Restaurant, object>>>
+                {
+                    {nameof(Restaurant.Name), r=> r.Name },
+                    {nameof(Restaurant.Description), r=> r.Description },
+                    {nameof(Restaurant.Category), r=> r.Category },
+                };
+
+                var selectedColumn = columnsSelector[query.SortBy];
+
+                baseQuery = query.SortDirection == SortDirection.ASC 
+                    ? baseQuery.OrderBy(selectedColumn)
+                    : baseQuery.OrderByDescending(selectedColumn);
+            }
+
+            var restaurants = baseQuery
+                .Skip(query.PageSize * (query.PageNumber - 1))
+                .Take(query.PageSize)
+                .ToList(); 
+
+            var totalItemsCount = baseQuery.Count();  
+
             var restaurantsDtos = _mapper.Map<List<RestaurantDto>>(restaurants);
-            return restaurantsDtos;
+
+            var result = new PagedResult<RestaurantDto>(restaurantsDtos, totalItemsCount, query.PageSize, query.PageNumber);
+
+            return result;
         }
 
-        public int Create(CreateRestaurantDto dto,int userId)
+        public int Create(CreateRestaurantDto dto)
         {
             var restaurant = _mapper.Map<Restaurant>(dto);
-            restaurant.CreatedById = userId;
+            restaurant.CreatedById = _userContextService.GetUserId;
             _dbContext.Restaurants.Add(restaurant);
             _dbContext.SaveChanges();
             return restaurant.Id;
         }
 
-        public void Update(UpdateRestaurantDto dto,int id,ClaimsPrincipal user)
+        public void Update(UpdateRestaurantDto dto,int id)
         {
 
             var restaurant = _dbContext
@@ -111,7 +145,7 @@ namespace RestaurantAPI.Services
                 throw new NotFoundException("Restaurant not found");
             }
 
-            var authorizationResult = _authorizationService.AuthorizeAsync(user, restaurant,
+            var authorizationResult = _authorizationService.AuthorizeAsync(_userContextService.User, restaurant,
                 new ResourceOperationRequirement(ResourceOperation.Update)).Result;
 
             if (!authorizationResult.Succeeded)

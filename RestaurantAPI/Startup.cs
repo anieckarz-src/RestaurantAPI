@@ -80,6 +80,9 @@ namespace RestaurantAPI
             services.AddScoped<IValidator<RegisterUserDto>, RegisterUserDtoValidator>();
             services.AddScoped<IDishService, DishService>();
             services.AddScoped<ErrorHandlingMiddleware>();
+            services.AddScoped <IValidator<RestaurantQuery>,RestaurantQueryValidator > ();
+            services.AddScoped<IUserContextService, UserContextService>();
+            services.AddHttpContextAccessor();
             services.AddSwaggerGen();
         }
 
